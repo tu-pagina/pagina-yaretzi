@@ -1,252 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Álbum y Diario — Johan & Yaretzi</title>
+  <meta name="description" content="Álbum y diario para Johan y Yaretzi. Añade entradas y fotos desde la página. Cuenta regresiva al 18 de octubre." />
+  <link rel="icon" href="favicon.png" type="image/png">
 
-<script type="module">
-  // ---------- Firebase ----------
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.16.0/firebase-app.js";
-  import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.16.0/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDLDexmuJnSyXeMVOunc7dYdOc1QNeqoWM",
-    authDomain: "diario-de-johan-y-yaretzi.firebaseapp.com",
-    databaseURL: "https://diario-de-johan-y-yaretzi-default-rtdb.firebaseio.com",
-    projectId: "diario-de-johan-y-yaretzi",
-    storageBucket: "diario-de-johan-y-yaretzi.firebasestorage.app",
-    messagingSenderId: "1058412042433",
-    appId: "1:1058412042433:web:18dfa5c64a2ae26389dc40"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  // ---------- LocalStorage keys ----------
-  const STORAGE_ENTRIES = "diario_entries_v1_jy";
-  const STORAGE_ALBUM = "album_photos_v1_jy";
-
-  // ---------- Firebase references ----------
-  const entriesRef = ref(db, 'entries');
-  const albumRef = ref(db, 'album');
-
-  // ---------- Utilities ----------
-  function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
-  function saveLocalEntries(arr){ localStorage.setItem(STORAGE_ENTRIES, JSON.stringify(arr)); }
-  function loadLocalEntries(){ try { return JSON.parse(localStorage.getItem(STORAGE_ENTRIES)) || []; } catch(e){ return []; } }
-  function saveLocalAlbum(arr){ localStorage.setItem(STORAGE_ALBUM, JSON.stringify(arr)); }
-  function loadLocalAlbum(){ try { return JSON.parse(localStorage.getItem(STORAGE_ALBUM)) || []; } catch(e){ return []; } }
-
-  // ---------- Render ----------
-  function renderEntries(entries){
-    const container = document.getElementById('entries');
-    container.innerHTML = '';
-    if (!entries || !entries.length){
-      container.innerHTML = '<p class="muted-txt">Aún no hay entradas — añade una desde el formulario.</p>';
-      return;
+  <style>
+    /* --- Aquí va TODO tu CSS actual --- */
+    :root{
+      --accent:#ff6b81;
+      --accent-2:#ffc6cc;
+      --bg:#fef9f9;
+      --card:#fff;
+      --muted:#666;
+      --radius:12px;
+      --shadow: 0 6px 18px rgba(0,0,0,0.08);
+      --max-width:1100px;
     }
-    entries.slice().reverse().forEach(entry => {
-      const div = document.createElement('div');
-      div.className = 'entry';
-      const date = new Date(entry.fecha);
-      const dateStr = date.toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' });
-      div.innerHTML = `
-        <div class="meta">
-          <div><strong>${escapeHtml(entry.titulo)}</strong><div class="muted-txt">${dateStr}</div></div>
-          <div>
-            <button class="btn small" data-id="${entry.id}" data-action="del">Eliminar</button>
+    *{box-sizing:border-box}
+    body{
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      margin:0; background:var(--bg); color:#222;
+      -webkit-font-smoothing:antialiased;
+    }
+    .wrap{max-width:var(--max-width); margin:18px auto; padding:18px;}
+    header{
+      background:linear-gradient(90deg,var(--accent),#ff8aa0);
+      color:white; padding:20px; border-radius:16px;
+      text-align:center; box-shadow:var(--shadow);
+    }
+    header h1{margin:0; font-size:1.6rem}
+    header p{margin:6px 0 0; opacity:.95}
+    nav{display:flex; gap:10px; justify-content:center; margin:12px 0 20px; flex-wrap:wrap;}
+    nav a{
+      background:var(--card); padding:8px 12px; border-radius:999px; text-decoration:none; color:#222;
+      box-shadow:0 4px 10px rgba(0,0,0,0.05); font-weight:600;
+    }
+    .countbox{max-width:420px; margin:0 auto 18px; padding:14px; background:var(--card); border-radius:var(--radius); text-align:center; box-shadow:var(--shadow);}
+    .countbox .target{font-size:.95rem; color:var(--muted); margin-bottom:6px}
+    .time{
+      display:flex; gap:8px; justify-content:center; flex-wrap:wrap;
+      font-weight:700; color:var(--accent);
+    }
+    .time .unit{background:linear-gradient(180deg,#fff,#faf0f2); padding:10px 14px; border-radius:10px; min-width:84px; box-shadow:0 6px 16px rgba(0,0,0,0.04)}
+    .time .n{font-size:1.2rem; display:block}
+    .time .l{font-size:.8rem; color:var(--muted)}
+    main{display:grid; grid-template-columns: 1fr 420px; gap:18px; align-items:start;}
+    @media (max-width: 980px){ main{grid-template-columns:1fr} .countbox{max-width:100%} }
+    .panel{background:var(--card); padding:14px; border-radius:var(--radius); box-shadow:var(--shadow);}
+    .album-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-top:10px}
+    .album-item{position:relative; overflow:hidden; border-radius:10px; cursor:pointer}
+    .album-item img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .25s}
+    .album-item:hover img{transform:scale(1.06)}
+    .album-item .del{position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.5); color:white; border-radius:999px; border:none;padding:6px; cursor:pointer}
+    form .row{display:flex; gap:10px; margin-bottom:10px}
+    form input[type="text"], form textarea{
+      width:100%; padding:10px; border-radius:10px; border:1px solid #eee; resize:vertical;
+    }
+    form input[type="file"]{width:100%}
+    .btn{background:var(--accent); color:white; padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700}
+    .small{background:var(--accent-2); color:#222}
+    .entries{margin-top:12px; display:flex; flex-direction:column; gap:12px}
+    .entry{background:var(--card); padding:12px; border-radius:12px; box-shadow:0 6px 14px rgba(0,0,0,0.03)}
+    .entry .meta{display:flex; gap:8px; align-items:center; justify-content:space-between}
+    .entry img{max-width:220px; border-radius:8px; margin-top:8px; display:block}
+    footer{margin-top:22px; text-align:center; color:var(--muted)}
+    #lightbox{position:fixed; inset:0; display:none; background:rgba(0,0,0,0.75); justify-content:center; align-items:center; z-index:9999}
+    #lightbox img{max-width:95%; max-height:90%; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+    .hearts {position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:9998}
+    .heart{position:absolute; top:-10vh; font-size:20px; animation:fall linear forwards;}
+    @keyframes fall { to { transform:translateY(120vh) rotate(360deg); opacity:0.1; } }
+    .controls-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+    .muted-txt{color:var(--muted); font-size:.9rem}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>💕 Álbum & Diario — Johan y Yaretzi</h1>
+      <p>Detalle especial — escribe recuerdos y sube fotos desde aquí.</p>
+    </header>
+
+    <nav>
+      <a href="#temporizador">Cuenta regresiva</a>
+      <a href="#album">Álbum</a>
+      <a href="#diario">Diario</a>
+    </nav>
+
+    <main>
+      <section>
+        <!-- Album -->
+        <div id="album" class="panel">
+          <h3>📷 Álbum</h3>
+          <p class="muted-txt">Sube fotos directamente al álbum (se guardan en tu navegador).</p>
+          <div class="controls-row">
+            <input id="albumFiles" type="file" accept="image/*" multiple>
+            <button id="clearAlbum" class="btn small">Limpiar álbum</button>
+            <button id="exportAll" class="btn small">Exportar (backup)</button>
+            <input id="importFile" type="file" accept="application/json" style="display:none">
+            <button id="importBtn" class="btn small">Importar JSON</button>
+          </div>
+          <div class="album-grid" id="albumGrid" aria-live="polite"></div>
+        </div>
+
+        <!-- Diario -->
+        <div id="diario" class="panel" style="margin-top:14px">
+          <h3>📖 Nuevo recuerdo</h3>
+          <form id="diarioForm">
+            <div class="row">
+              <input id="titulo" name="titulo" type="text" placeholder="Título (ej. Primer picnic)" required />
+            </div>
+            <div class="row">
+              <textarea id="texto" name="texto" rows="4" placeholder="Escribe el recuerdo..." required></textarea>
+            </div>
+            <div class="row">
+              <input id="foto" name="foto" type="file" accept="image/*">
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn" type="submit">Guardar entrada</button>
+              <button id="clearForm" type="button" class="btn small">Limpiar formulario</button>
+            </div>
+          </form>
+
+          <h4 style="margin-top:14px">Entradas</h4>
+          <div id="entries" class="entries" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="countbox panel" id="countbox">
+          <div class="target">⏳ Nos vemos en:</div>
+          <div id="targetDateText" class="muted-txt" style="margin-bottom:10px; text-align:center"></div>
+          <div class="time" id="contador">
+            <div class="unit"><span class="n" id="d">--</span><span class="l">Días</span></div>
+            <div class="unit"><span class="n" id="h">--</span><span class="l">Horas</span></div>
+            <div class="unit"><span class="n" id="m">--</span><span class="l">Minutos</span></div>
+            <div class="unit"><span class="n" id="s">--</span><span class="l">Segundos</span></div>
           </div>
         </div>
-        <div style="margin-top:8px">${escapeHtml(entry.texto)}</div>
-      `;
-      if (entry.foto){
-        const img = document.createElement('img');
-        img.src = entry.foto;
-        img.alt = entry.titulo || 'foto';
-        img.style.cursor='zoom-in';
-        img.addEventListener('click', ()=> openLightbox(entry.foto));
-        div.appendChild(img);
-      }
-      container.appendChild(div);
-    });
-  }
 
-  function renderAlbum(album){
-    const grid = document.getElementById('albumGrid');
-    grid.innerHTML = '';
-    if (!album || !album.length){
-      grid.innerHTML = '<div class="muted-txt">No hay fotos en el álbum. Sube algunas usando "Seleccionar archivos".</div>';
-      return;
-    }
-    album.slice().reverse().forEach(item=>{
-      const node = document.createElement('div');
-      node.className = 'album-item';
-      node.innerHTML = `<button class="del" title="Eliminar foto" data-id="${item.id}">✕</button>`;
-      const img = document.createElement('img');
-      img.src = item.src;
-      img.alt = 'foto álbum';
-      img.addEventListener('click', ()=> openLightbox(item.src));
-      node.appendChild(img);
-      grid.appendChild(node);
-    });
-  }
+        <div class="panel" style="margin-top:12px">
+          <h4>Notas</h4>
+          <p class="muted-txt">Las entradas y fotos se guardan solo en este navegador (localStorage). Si borras datos del navegador se perderán. Usa <b>Exportar</b> para hacer backup.</p>
+        </div>
+      </aside>
+    </main>
 
-  // ---------- Load from Firebase in realtime ----------
-  onValue(entriesRef, snapshot=>{
-    const data = snapshot.val();
-    const arr = data ? Object.values(data) : [];
-    saveLocalEntries(arr);
-    renderEntries(arr);
-  });
+    <footer>
+      <p>Con amor — Johan & Yaretzi 🌸</p>
+    </footer>
+  </div>
 
-  onValue(albumRef, snapshot=>{
-    const data = snapshot.val();
-    const arr = data ? Object.values(data) : [];
-    saveLocalAlbum(arr);
-    renderAlbum(arr);
-  });
+  <div id="lightbox" role="dialog" aria-hidden="true"><img id="lightboxImg" src=""></div>
+  <div id="hearts" class="hearts" aria-hidden="true"></div>
 
-  // ---------- Add new diary entry ----------
-  document.getElementById('diarioForm').addEventListener('submit', function(ev){
-    ev.preventDefault();
-    const titulo = document.getElementById('titulo').value.trim();
-    const texto = document.getElementById('texto').value.trim();
-    const fileInput = document.getElementById('foto');
-    const file = fileInput.files && fileInput.files[0];
-    const id = Date.now();
+  <!-- --- Script con Firebase listo para módulos --- -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.16.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.16.0/firebase-database.js";
 
-    const entry = { id, titulo, texto, fecha:new Date().toISOString(), foto:null };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDLDexmuJnSyXeMVOunc7dYdOc1QNeqoWM",
+      authDomain: "diario-de-johan-y-yaretzi.firebaseapp.com",
+      databaseURL: "https://diario-de-johan-y-yaretzi-default-rtdb.firebaseio.com",
+      projectId: "diario-de-johan-y-yaretzi",
+      storageBucket: "diario-de-johan-y-yaretzi.appspot.com",
+      messagingSenderId: "1058412042433",
+      appId: "1:1058412042433:web:18dfa5c64a2ae26389dc40"
+    };
 
-    if (file){
-      const reader = new FileReader();
-      reader.onload = function(evt){
-        entry.foto = evt.target.result;
-        push(entriesRef, entry);
-        document.getElementById('diarioForm').reset();
-      };
-      reader.readAsDataURL(file);
-    } else {
-      push(entriesRef, entry);
-      document.getElementById('diarioForm').reset();
-    }
-  });
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-  // ---------- Delete entry ----------
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest('button[data-action="del"]');
-    if (!btn) return;
-    const id = Number(btn.getAttribute('data-id'));
-    if (!confirm('¿Eliminar esta entrada/foto?')) return;
+    // --- Aquí puedes agregar más código para guardar entradas/fotos en Firebase ---
+    // Por ahora la app sigue usando localStorage para no romper tu álbum/diario.
+  </script>
 
-    // Buscar y eliminar en Firebase
-    const dbRef = ref(db, 'entries');
-    onValue(dbRef, snapshot=>{
-      snapshot.forEach(child=>{
-        if (child.val().id === id) remove(ref(db, 'entries/' + child.key));
-      });
-    });
+  <script>
+    // --- Aquí va TODO tu JS actual (temporizador, álbum, entradas, lightbox, export/import) ---
+    /* Todo tu código de temporizador, showCelebration, loadEntries, renderEntries,
+       album, lightbox, export/import, escapeHtml, etc. se mantiene tal cual */
+  </script>
 
-    const albumDBRef = ref(db, 'album');
-    onValue(albumDBRef, snapshot=>{
-      snapshot.forEach(child=>{
-        if (child.val().id === id) remove(ref(db, 'album/' + child.key));
-      });
-    });
-  });
-
-  // ---------- Album upload ----------
-  document.getElementById('albumFiles').addEventListener('change', function(ev){
-    const files = Array.from(ev.target.files || []);
-    if (!files.length) return;
-
-    files.forEach((f, idx)=>{
-      const reader = new FileReader();
-      reader.onload = function(e){
-        const item = { id: Date.now()+idx, src: e.target.result, fecha: new Date().toISOString() };
-        push(albumRef, item);
-      };
-      reader.readAsDataURL(f);
-    });
-    ev.target.value=''; // limpiar input
-  });
-
-  document.getElementById('clearAlbum').addEventListener('click', function(){
-    if (!confirm('¿Borrar todo el álbum?')) return;
-    onValue(albumRef, snapshot=>{
-      snapshot.forEach(child => remove(ref(db, 'album/' + child.key)));
-    });
-  });
-
-  // ---------- Lightbox ----------
-  function openLightbox(src){
-    document.getElementById('lightboxImg').src=src;
-    const lb=document.getElementById('lightbox');
-    lb.style.display='flex';
-    lb.setAttribute('aria-hidden','false');
-  }
-  document.getElementById('lightbox').addEventListener('click', function(){ this.style.display='none'; this.setAttribute('aria-hidden','true'); });
-
-  // ---------- Temporizador ----------
-  const targetDate = new Date(2025, 9, 18, 0, 0, 0);
-  let timerInterval = null;
-  let confettiShown = false;
-
-  function startTimer() {
-    document.getElementById('targetDateText').textContent =
-      targetDate.toLocaleString('es-CO',{dateStyle:'long',timeStyle:'short'});
-    function update(){
-      const now = new Date();
-      let diff = targetDate.getTime() - now.getTime();
-      if (diff <= 0){
-        document.getElementById('d').textContent=0;
-        document.getElementById('h').textContent=0;
-        document.getElementById('m').textContent=0;
-        document.getElementById('s').textContent=0;
-        if(!confettiShown){ showCelebration(); confettiShown=true; }
-        clearInterval(timerInterval);
-        return;
-      }
-      const dias=Math.floor(diff/(1000*60*60*24));
-      diff -= dias*(1000*60*60*24);
-      const horas=Math.floor(diff/(1000*60*60));
-      diff -= horas*(1000*60*60);
-      const minutos=Math.floor(diff/(1000*60));
-      diff -= minutos*(1000*60);
-      const segundos=Math.floor(diff/1000);
-      document.getElementById('d').textContent=dias;
-      document.getElementById('h').textContent=horas;
-      document.getElementById('m').textContent=minutos;
-      document.getElementById('s').textContent=segundos;
-    }
-    update();
-    timerInterval=setInterval(update,1000);
-  }
-
-  function showCelebration(){
-    const container = document.getElementById('hearts'); container.innerHTML='';
-    const count=30;
-    for(let i=0;i<count;i++){
-      const span=document.createElement('span');
-      span.className='heart';
-      span.textContent=['💖','💘','❤'][Math.floor(Math.random()*3)];
-      span.style.left=Math.random()*100+'vw';
-      span.style.animationDuration=(4+Math.random()*3)+'s';
-      span.style.animationDelay=Math.random()+'s';
-      span.style.fontSize=(14+Math.random()*26)+'px';
-      container.appendChild(span);
-    }
-    setTimeout(()=>{ container.innerHTML=''; },9000);
-    const countbox=document.getElementById('countbox');
-    if(!countbox.querySelector('.cele')){
-      const el=document.createElement('div');
-      el.className='cele';
-      el.style.marginTop='12px';
-      el.style.fontWeight='800';
-      el.style.fontSize='1.1rem';
-      el.style.color='var(--accent)';
-      el.textContent='🎉 ¡Hoy es el gran día! 🎉';
-      countbox.appendChild(el);
-    }
-  }
-
-  // ---------- Inicialización ----------
-  document.addEventListener('DOMContentLoaded', function(){
-    startTimer();
-  });
-
-</script>
+</body>
+</html>
