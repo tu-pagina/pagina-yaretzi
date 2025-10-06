@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Álbum y Diario — Johan & Yaretzi</title>
+  <meta name="description" content="Álbum y diario para Johan y Yaretzi. Añade entradas y fotos desde la página. Cuenta regresiva al 18 de octubre." />
   <link rel="icon" href="favicon.png" type="image/png">
 
   <style>
@@ -93,261 +94,218 @@
   </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-<h1>💕 Álbum & Diario — Johan y Yaretzi</h1>
-<p>Detalle especial — escribe recuerdos y sube fotos desde aquí.</p>
-</header>
+  <div class="wrap">
+    <header>
+      <h1>💕 Álbum & Diario — Johan y Yaretzi</h1>
+      <p>Detalle especial — escribe recuerdos y sube fotos desde aquí.</p>
+    </header>
 
-<nav>
-<a href="#temporizador">Cuenta regresiva</a>
-<a href="#album">Álbum</a>
-<a href="#diario">Diario</a>
-</nav>
+    <nav>
+      <a href="#temporizador">Cuenta regresiva</a>
+      <a href="#album">Álbum</a>
+      <a href="#diario">Diario</a>
+    </nav>
 
-<main>
-<section>
-  <div id="album" class="panel">
-    <h3>📷 Álbum</h3>
-    <p class="muted-txt">Sube fotos y todos podrán verlas.</p>
-    <div class="controls-row">
-      <input id="albumFiles" type="file" accept="image/*" multiple>
-      <button id="clearAlbum" class="btn small">Limpiar álbum</button>
-    </div>
-    <div class="album-grid" id="albumGrid" aria-live="polite"></div>
-  </div>
-
-  <div id="diario" class="panel" style="margin-top:14px">
-    <h3>📖 Nuevo recuerdo</h3>
-    <form id="diarioForm">
-      <div class="row">
-        <input id="titulo" name="titulo" type="text" placeholder="Título" required />
-      </div>
-      <div class="row">
-        <textarea id="texto" name="texto" rows="4" placeholder="Escribe el recuerdo..." required></textarea>
-      </div>
-      <div class="row">
-        <input id="foto" name="foto" type="file" accept="image/*">
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn" type="submit">Guardar entrada</button>
-        <button id="clearForm" type="button" class="btn small">Limpiar formulario</button>
-      </div>
-    </form>
-
-    <h4 style="margin-top:14px">Entradas</h4>
-    <div id="entries" class="entries" aria-live="polite"></div>
-  </div>
-</section>
-
-<aside>
-  <div class="countbox panel" id="countbox">
-    <div class="target">⏳ Nos vemos en:</div>
-    <div id="targetDateText" class="muted-txt" style="margin-bottom:10px; text-align:center"></div>
-    <div class="time" id="contador">
-      <div class="unit"><span class="n" id="d">--</span><span class="l">Días</span></div>
-      <div class="unit"><span class="n" id="h">--</span><span class="l">Horas</span></div>
-      <div class="unit"><span class="n" id="m">--</span><span class="l">Minutos</span></div>
-      <div class="unit"><span class="n" id="s">--</span><span class="l">Segundos</span></div>
-    </div>
-  </div>
-
-  <div class="panel" style="margin-top:12px">
-    <h4>Notas</h4>
-    <p class="muted-txt">Todo se guarda en Google Drive, así tú y Yaretzi pueden ver todo lo que suben.</p>
-  </div>
-</aside>
-</main>
-
-<footer>
-<p>Con amor — Johan & Yaretzi 🌸</p>
-</footer>
-</div>
-
-<div id="lightbox" role="dialog" aria-hidden="true"><img id="lightboxImg" src=""></div>
-<div id="hearts" class="hearts" aria-hidden="true"></div>
-
-<script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEIff6bI_-fpViBpkAo5ptOz-kYl2NNPNeLWCGQ6EAgGVJcIiFUJSR79EJsRAz-Urs/exec";
-
-function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
-
-/* ---------- Temporizador ---------- */
-const targetDate = new Date(2025,9,18,0,0,0);
-let timerInterval=null;
-function startTimer(){
-  document.getElementById('targetDateText').textContent = targetDate.toLocaleString();
-  function update(){
-    const now = new Date();
-    let diff = targetDate.getTime() - now.getTime();
-    if(diff<=0){
-      document.getElementById('d').textContent=0;
-      document.getElementById('h').textContent=0;
-      document.getElementById('m').textContent=0;
-      document.getElementById('s').textContent=0;
-      clearInterval(timerInterval);
-      return;
-    }
-    const dias=Math.floor(diff/(1000*60*60*24)); diff-=dias*1000*60*60*24;
-    const horas=Math.floor(diff/(1000*60*60)); diff-=horas*1000*60*60;
-    const minutos=Math.floor(diff/(1000*60)); diff-=minutos*1000*60;
-    const segundos=Math.floor(diff/1000);
-    document.getElementById('d').textContent=dias;
-    document.getElementById('h').textContent=horas;
-    document.getElementById('m').textContent=minutos;
-    document.getElementById('s').textContent=segundos;
-  }
-  update();
-  timerInterval=setInterval(update,1000);
-}
-
-/* ---------- Sincronización Google Drive ---------- */
-async function fetchData(){
-  try{
-    const resp=await fetch(SCRIPT_URL);
-    return await resp.json();
-  }catch(e){ return {entries:[],album:[]}; }
-}
-
-async function saveData(data){
-  await fetch(SCRIPT_URL,{
-    method:'POST',
-    body:JSON.stringify(data),
-    headers:{'Content-Type':'application/json'}
-  });
-}
-
-/* ---------- Diario ---------- */
-async function renderEntries(){
-  const container=document.getElementById('entries');
-  const data=await fetchData();
-  const list=data.entries||[];
-  container.innerHTML='';
-  if(!list.length){ container.innerHTML='<p class="muted-txt">Aún no hay entradas.</p>'; return; }
-  list.slice().reverse().forEach(entry=>{
-    const div=document.createElement('div');
-    div.className='entry';
-    const date=new Date(entry.fecha);
-    const dateStr=date.toLocaleString();
-    div.innerHTML=`
-      <div class="meta">
-        <div><strong>${escapeHtml(entry.titulo)}</strong><div class="muted-txt">${dateStr}</div></div>
-        <div>
-          <button class="btn small" data-id="${entry.id}" data-action="del">Eliminar</button>
+    <main>
+      <!-- IZQUIERDA: Album + Diario -->
+      <section>
+        <!-- Album -->
+        <div id="album" class="panel">
+          <h3>📷 Álbum</h3>
+          <p class="muted-txt">Sube fotos directamente al álbum (se guardan en Drive y se muestran a ambos).</p>
+          <div class="controls-row">
+            <input id="albumFiles" type="file" accept="image/*" multiple>
+          </div>
+          <div class="album-grid" id="albumGrid" aria-live="polite"></div>
         </div>
-      </div>
-      <div style="margin-top:8px">${escapeHtml(entry.texto)}</div>
-    `;
-    if(entry.foto){
-      const img=document.createElement('img');
-      img.src=entry.foto; img.alt=entry.titulo||'foto';
-      img.addEventListener('click',()=> openLightbox(entry.foto));
-      div.appendChild(img);
+
+        <!-- Diario -->
+        <div id="diario" class="panel" style="margin-top:14px">
+          <h3>📖 Nuevo recuerdo</h3>
+          <form id="diarioForm">
+            <div class="row">
+              <input id="titulo" name="titulo" type="text" placeholder="Título (ej. Primer picnic)" required />
+            </div>
+            <div class="row">
+              <textarea id="texto" name="texto" rows="4" placeholder="Escribe el recuerdo..." required></textarea>
+            </div>
+            <div class="row">
+              <input id="foto" name="foto" type="file" accept="image/*">
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn" type="submit">Guardar entrada</button>
+              <button id="clearForm" type="button" class="btn small">Limpiar formulario</button>
+            </div>
+          </form>
+
+          <h4 style="margin-top:14px">Entradas</h4>
+          <div id="entries" class="entries" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- DERECHA: Temporizador -->
+      <aside>
+        <div class="countbox panel" id="countbox">
+          <div class="target">⏳ Nos vemos en:</div>
+          <div id="targetDateText" class="muted-txt" style="margin-bottom:10px; text-align:center"></div>
+          <div class="time" id="contador">
+            <div class="unit"><span class="n" id="d">--</span><span class="l">Días</span></div>
+            <div class="unit"><span class="n" id="h">--</span><span class="l">Horas</span></div>
+            <div class="unit"><span class="n" id="m">--</span><span class="l">Minutos</span></div>
+            <div class="unit"><span class="n" id="s">--</span><span class="l">Segundos</span></div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:12px">
+          <h4>Notas</h4>
+          <p class="muted-txt">Las entradas y fotos se guardan en Drive y se muestran a ambos usuarios. Usa la web normalmente para ver todo.</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <p>Con amor — Johan & Yaretzi 🌸</p>
+    </footer>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="lightbox" role="dialog" aria-hidden="true"><img id="lightboxImg" src=""></div>
+  <!-- Corazones/confetti -->
+  <div id="hearts" class="hearts" aria-hidden="true"></div>
+
+  <script>
+    const SCRIPT_URL = "AKfycbwEIff6bI_-fpViBpkAo5ptOz-kYl2NNPNeLWCGQ6EAgGVJcIiFUJSR79EJsRAz-Urs"; // reemplaza con tu web app
+
+    /* ---------- Temporizador ---------- */
+    const targetDate = new Date(2025, 9, 18, 0, 0, 0);
+    let timerInterval = null;
+    let confettiShown = false;
+
+    function startTimer() {
+      document.getElementById('targetDateText').textContent =
+        targetDate.toLocaleString('es-CO', { dateStyle: 'long', timeStyle: 'short' });
+
+      function update() {
+        const now = new Date();
+        let diff = targetDate.getTime() - now.getTime();
+        if (diff <= 0) {
+          document.getElementById('d').textContent = 0;
+          document.getElementById('h').textContent = 0;
+          document.getElementById('m').textContent = 0;
+          document.getElementById('s').textContent = 0;
+          if (!confettiShown) { showCelebration(); confettiShown = true; }
+          clearInterval(timerInterval);
+          return;
+        }
+        const dias = Math.floor(diff / (1000*60*60*24));
+        diff -= dias * (1000*60*60*24);
+        const horas = Math.floor(diff / (1000*60*60));
+        diff -= horas * (1000*60*60);
+        const minutos = Math.floor(diff / (1000*60));
+        diff -= minutos * (1000*60);
+        const segundos = Math.floor(diff / 1000);
+        document.getElementById('d').textContent = dias;
+        document.getElementById('h').textContent = horas;
+        document.getElementById('m').textContent = minutos;
+        document.getElementById('s').textContent = segundos;
+      }
+      update(); timerInterval = setInterval(update, 1000);
     }
-    container.appendChild(div);
-  });
-}
 
-document.getElementById('diarioForm').addEventListener('submit', async function(ev){
-  ev.preventDefault();
-  const titulo=document.getElementById('titulo').value.trim();
-  const texto=document.getElementById('texto').value.trim();
-  const fileInput=document.getElementById('foto');
-  const file=fileInput.files&&fileInput.files[0];
-  let foto=null;
-  if(file){
-    const reader=new FileReader();
-    reader.onload=async function(evt){
-      foto=evt.target.result;
-      await addEntry(titulo,texto,foto);
-      document.getElementById('diarioForm').reset();
-    }
-    reader.readAsDataURL(file);
-  }else{
-    await addEntry(titulo,texto,null);
-    document.getElementById('diarioForm').reset();
-  }
-});
-
-async function addEntry(titulo,texto,foto){
-  const data=await fetchData();
-  data.entries=data.entries||[];
-  data.entries.push({id:Date.now(),titulo,texto,foto,fecha:new Date().toISOString()});
-  await saveData(data);
-  renderEntries();
-}
-
-document.addEventListener('click',async function(e){
-  const btn=e.target.closest('button[data-action="del"]');
-  if(!btn) return;
-  const id=Number(btn.getAttribute('data-id'));
-  if(!confirm('Eliminar entrada?')) return;
-  const data=await fetchData();
-  data.entries=data.entries.filter(x=>x.id!==id);
-  await saveData(data);
-  renderEntries();
-});
-
-/* ---------- Álbum ---------- */
-async function renderAlbum(){
-  const grid=document.getElementById('albumGrid');
-  const data=await fetchData();
-  const arr=data.album||[];
-  grid.innerHTML='';
-  if(!arr.length){ grid.innerHTML='<div class="muted-txt">No hay fotos en el álbum.</div>'; return; }
-  arr.slice().reverse().forEach(item=>{
-    const node=document.createElement('div');
-    node.className='album-item';
-    node.innerHTML=`<button class="del" data-id="${item.id}">✕</button>`;
-    const img=document.createElement('img');
-    img.src=item.src; img.alt='foto álbum';
-    img.addEventListener('click',()=> openLightbox(item.src));
-    node.appendChild(img);
-    grid.appendChild(node);
-  });
-}
-
-document.getElementById('albumFiles').addEventListener('change', async function(ev){
-  const files=Array.from(ev.target.files||[]);
-  if(!files.length) return;
-  const data=await fetchData();
-  data.album=data.album||[];
-  let remaining=files.length;
-  files.forEach((f,idx)=>{
-    const reader=new FileReader();
-    reader.onload=async function(e){
-      data.album.push({id:Date.now()+idx,src:e.target.result,fecha:new Date().toISOString()});
-      remaining--;
-      if(remaining===0){
-        await saveData(data);
-        renderAlbum();
-        ev.target.value='';
+    function showCelebration(){
+      const container = document.getElementById('hearts');
+      container.innerHTML = '';
+      const count = 30;
+      for (let i=0;i<count;i++){
+        const span = document.createElement('span');
+        span.className = 'heart';
+        span.textContent = ['💖','💘','❤'][Math.floor(Math.random()*3)];
+        span.style.left = Math.random()*100+'vw';
+        span.style.animationDuration = (4 + Math.random()*3)+'s';
+        span.style.animationDelay = Math.random()+'s';
+        span.style.fontSize = (14 + Math.random()*26)+'px';
+        container.appendChild(span);
+      }
+      setTimeout(()=>{ container.innerHTML='' },9000);
+      const countbox = document.getElementById('countbox');
+      const old = countbox.querySelector('.cele');
+      if (!old) {
+        const el = document.createElement('div');
+        el.className='cele';
+        el.style.marginTop='12px'; el.style.fontWeight='800'; el.style.fontSize='1.1rem'; el.style.color='var(--accent)';
+        el.textContent='🎉 ¡Hoy es el gran día! 🎉';
+        countbox.appendChild(el);
       }
     }
-    reader.readAsDataURL(f);
-  });
-});
 
-document.getElementById('clearAlbum').addEventListener('click', async function(){
-  if(!confirm('Borrar todo el álbum?')) return;
-  const data=await fetchData();
-  data.album=[];
-  await saveData(data);
-  renderAlbum();
-});
+    /* ---------- Utilities ---------- */
+    function escapeHtml(s){ if(!s)return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+    function openLightbox(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').style.display='flex'; document.getElementById('lightbox').setAttribute('aria-hidden','false'); }
+    document.getElementById('lightbox').addEventListener('click', ()=>{document.getElementById('lightbox').style.display='none'; document.getElementById('lightbox').setAttribute('aria-hidden','true');});
 
-/* ---------- Lightbox ---------- */
-function openLightbox(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').style.display='flex'; }
-document.getElementById('lightbox').addEventListener('click', function(){ this.style.display='none'; });
+    /* ---------- Sincronización con Apps Script ---------- */
+    async function fetchRemoteEntries(){
+      try{
+        const res = await fetch(SCRIPT_URL+'?action=get');
+        const data = await res.json();
+        renderRemoteEntries(data);
+      }catch(e){ console.error(e); }
+    }
 
-/* ---------- Inicialización ---------- */
-document.addEventListener('DOMContentLoaded', function(){
-  startTimer();
-  renderEntries();
-  renderAlbum();
-  setInterval(()=>{ renderEntries(); renderAlbum(); },5000); // refresco cada 5s
-});
-</script>
+    async function saveRemoteEntry(entry){
+      try{
+        await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(entry),headers:{'Content-Type':'application/json'}});
+      }catch(e){ console.error(e); }
+    }
+
+    function renderRemoteEntries(list){
+      const container = document.getElementById('entries');
+      container.innerHTML='';
+      if(!list.length){ container.innerHTML='<p class="muted-txt">Aún no hay entradas — añade una desde el formulario.</p>'; return; }
+      list.slice().reverse().forEach(entry=>{
+        const div=document.createElement('div');
+        div.className='entry';
+        const date=new Date(entry.fecha);
+        const dateStr=date.toLocaleString('es-CO',{dateStyle:'medium',timeStyle:'short'});
+        div.innerHTML=`<div class="meta"><div><strong>${escapeHtml(entry.titulo)}</strong><div class="muted-txt">${dateStr}</div></div></div>
+        <div style="margin-top:8px">${escapeHtml(entry.texto)}</div>`;
+        if(entry.foto){
+          const img=document.createElement('img'); img.src=entry.foto; img.alt=entry.titulo||'foto'; img.style.cursor='zoom-in'; img.addEventListener('click',()=>openLightbox(entry.foto));
+          div.appendChild(img);
+        }
+        container.appendChild(div);
+      });
+    }
+
+    document.getElementById('diarioForm').addEventListener('submit', async function(ev){
+      ev.preventDefault();
+      const usuario = prompt("Ingresa tu nombre (Johan o Yaretzi)","");
+      const titulo = document.getElementById('titulo').value.trim();
+      const texto = document.getElementById('texto').value.trim();
+      const fileInput=document.getElementById('foto');
+      const file=fileInput.files[0];
+      if(file){
+        const reader=new FileReader();
+        reader.onload=async function(evt){
+          await saveRemoteEntry({usuario,titulo,texto,foto:evt.target.result});
+          fetchRemoteEntries();
+          document.getElementById('diarioForm').reset();
+        }
+        reader.readAsDataURL(file);
+      } else {
+        await saveRemoteEntry({usuario,titulo,texto,foto:null});
+        fetchRemoteEntries();
+        document.getElementById('diarioForm').reset();
+      }
+    });
+
+    document.getElementById('clearForm').addEventListener('click',()=>document.getElementById('diarioForm').reset());
+
+    /* ---------- Inicialización ---------- */
+    document.addEventListener('DOMContentLoaded', ()=>{
+      startTimer();
+      fetchRemoteEntries();
+    });
+  </script>
 </body>
 </html>
-
