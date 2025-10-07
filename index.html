@@ -82,7 +82,7 @@
     #lightbox{position:fixed; inset:0; display:none; background:rgba(0,0,0,0.75); justify-content:center; align-items:center; z-index:9999}
     #lightbox img{max-width:95%; max-height:90%; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.6)}
 
-    /* Confetti corazones simple */
+    /* Corazones/confetti */
     .hearts {position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:9998}
     .heart{position:absolute; top:-10vh; font-size:20px; animation:fall linear forwards;}
     @keyframes fall {
@@ -112,9 +112,10 @@
         <!-- Album -->
         <div id="album" class="panel">
           <h3>📷 Álbum</h3>
-          <p class="muted-txt">Sube fotos directamente al álbum (se guardan en Drive y se muestran a ambos).</p>
+          <p class="muted-txt">Sube fotos directamente al álbum (todos pueden ver lo que suben).</p>
           <div class="controls-row">
             <input id="albumFiles" type="file" accept="image/*" multiple>
+            <button id="clearAlbum" class="btn small">Limpiar álbum</button>
           </div>
           <div class="album-grid" id="albumGrid" aria-live="polite"></div>
         </div>
@@ -123,6 +124,9 @@
         <div id="diario" class="panel" style="margin-top:14px">
           <h3>📖 Nuevo recuerdo</h3>
           <form id="diarioForm">
+            <div class="row">
+              <input id="usuario" type="text" placeholder="Tu nombre" required>
+            </div>
             <div class="row">
               <input id="titulo" name="titulo" type="text" placeholder="Título (ej. Primer picnic)" required />
             </div>
@@ -158,7 +162,7 @@
 
         <div class="panel" style="margin-top:12px">
           <h4>Notas</h4>
-          <p class="muted-txt">Las entradas y fotos se guardan en Drive y se muestran a ambos usuarios. Usa la web normalmente para ver todo.</p>
+          <p class="muted-txt">Las entradas y fotos se guardan en Drive y se muestran para ambos.</p>
         </div>
       </aside>
     </main>
@@ -170,17 +174,14 @@
 
   <!-- Lightbox -->
   <div id="lightbox" role="dialog" aria-hidden="true"><img id="lightboxImg" src=""></div>
-  <!-- Corazones/confetti -->
   <div id="hearts" class="hearts" aria-hidden="true"></div>
 
   <script>
-    const SCRIPT_URL = "AKfycbwEIff6bI_-fpViBpkAo5ptOz-kYl2NNPNeLWCGQ6EAgGVJcIiFUJSR79EJsRAz-Urs"; // reemplaza con tu web app
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEIff6bI_-fpViBpkAo5ptOz-kYl2NNPNeLWCGQ6EAgGVJcIiFUJSR79EJsRAz-Urs/exec';
 
     /* ---------- Temporizador ---------- */
     const targetDate = new Date(2025, 9, 18, 0, 0, 0);
     let timerInterval = null;
-    let confettiShown = false;
-
     function startTimer() {
       document.getElementById('targetDateText').textContent =
         targetDate.toLocaleString('es-CO', { dateStyle: 'long', timeStyle: 'short' });
@@ -193,7 +194,6 @@
           document.getElementById('h').textContent = 0;
           document.getElementById('m').textContent = 0;
           document.getElementById('s').textContent = 0;
-          if (!confettiShown) { showCelebration(); confettiShown = true; }
           clearInterval(timerInterval);
           return;
         }
@@ -204,107 +204,131 @@
         const minutos = Math.floor(diff / (1000*60));
         diff -= minutos * (1000*60);
         const segundos = Math.floor(diff / 1000);
+
         document.getElementById('d').textContent = dias;
         document.getElementById('h').textContent = horas;
         document.getElementById('m').textContent = minutos;
         document.getElementById('s').textContent = segundos;
       }
-      update(); timerInterval = setInterval(update, 1000);
+      update();
+      timerInterval = setInterval(update, 1000);
     }
 
-    function showCelebration(){
-      const container = document.getElementById('hearts');
-      container.innerHTML = '';
-      const count = 30;
-      for (let i=0;i<count;i++){
-        const span = document.createElement('span');
-        span.className = 'heart';
-        span.textContent = ['💖','💘','❤'][Math.floor(Math.random()*3)];
-        span.style.left = Math.random()*100+'vw';
-        span.style.animationDuration = (4 + Math.random()*3)+'s';
-        span.style.animationDelay = Math.random()+'s';
-        span.style.fontSize = (14 + Math.random()*26)+'px';
-        container.appendChild(span);
-      }
-      setTimeout(()=>{ container.innerHTML='' },9000);
-      const countbox = document.getElementById('countbox');
-      const old = countbox.querySelector('.cele');
-      if (!old) {
-        const el = document.createElement('div');
-        el.className='cele';
-        el.style.marginTop='12px'; el.style.fontWeight='800'; el.style.fontSize='1.1rem'; el.style.color='var(--accent)';
-        el.textContent='🎉 ¡Hoy es el gran día! 🎉';
-        countbox.appendChild(el);
-      }
+    /* ---------- Lightbox ---------- */
+    function openLightbox(src){
+      document.getElementById('lightboxImg').src = src;
+      const lb = document.getElementById('lightbox');
+      lb.style.display = 'flex';
+      lb.setAttribute('aria-hidden','false');
+    }
+    document.getElementById('lightbox').addEventListener('click', function(){ this.style.display='none'; this.setAttribute('aria-hidden','true'); });
+
+    /* ---------- Fetch / mostrar entradas ---------- */
+    async function fetchEntries(){
+      try {
+        const resp = await fetch(SCRIPT_URL);
+        const data = await resp.json();
+        renderEntries(data.entries || []);
+      } catch(e){ console.error(e); }
     }
 
-    /* ---------- Utilities ---------- */
-    function escapeHtml(s){ if(!s)return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
-    function openLightbox(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').style.display='flex'; document.getElementById('lightbox').setAttribute('aria-hidden','false'); }
-    document.getElementById('lightbox').addEventListener('click', ()=>{document.getElementById('lightbox').style.display='none'; document.getElementById('lightbox').setAttribute('aria-hidden','true');});
-
-    /* ---------- Sincronización con Apps Script ---------- */
-    async function fetchRemoteEntries(){
-      try{
-        const res = await fetch(SCRIPT_URL+'?action=get');
-        const data = await res.json();
-        renderRemoteEntries(data);
-      }catch(e){ console.error(e); }
-    }
-
-    async function saveRemoteEntry(entry){
-      try{
-        await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(entry),headers:{'Content-Type':'application/json'}});
-      }catch(e){ console.error(e); }
-    }
-
-    function renderRemoteEntries(list){
+    function renderEntries(list){
       const container = document.getElementById('entries');
-      container.innerHTML='';
-      if(!list.length){ container.innerHTML='<p class="muted-txt">Aún no hay entradas — añade una desde el formulario.</p>'; return; }
-      list.slice().reverse().forEach(entry=>{
-        const div=document.createElement('div');
-        div.className='entry';
-        const date=new Date(entry.fecha);
-        const dateStr=date.toLocaleString('es-CO',{dateStyle:'medium',timeStyle:'short'});
-        div.innerHTML=`<div class="meta"><div><strong>${escapeHtml(entry.titulo)}</strong><div class="muted-txt">${dateStr}</div></div></div>
-        <div style="margin-top:8px">${escapeHtml(entry.texto)}</div>`;
-        if(entry.foto){
-          const img=document.createElement('img'); img.src=entry.foto; img.alt=entry.titulo||'foto'; img.style.cursor='zoom-in'; img.addEventListener('click',()=>openLightbox(entry.foto));
+      container.innerHTML = '';
+      if (!list.length){
+        container.innerHTML = '<p class="muted-txt">Aún no hay entradas.</p>';
+        return;
+      }
+      list.slice().reverse().forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        const date = new Date(entry.fecha);
+        const dateStr = date.toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' });
+        div.innerHTML = `
+          <div class="meta">
+            <div><strong>${escapeHtml(entry.usuario)}: ${escapeHtml(entry.titulo)}</strong><div class="muted-txt">${dateStr}</div></div>
+          </div>
+          <div style="margin-top:8px">${escapeHtml(entry.texto)}</div>
+        `;
+        if (entry.foto) {
+          const img = document.createElement('img');
+          img.src = entry.foto;
+          img.alt = entry.titulo || 'foto';
+          img.style.cursor = 'zoom-in';
+          img.addEventListener('click', ()=> openLightbox(entry.foto));
           div.appendChild(img);
         }
         container.appendChild(div);
       });
     }
 
+    /* ---------- Subir nueva entrada ---------- */
     document.getElementById('diarioForm').addEventListener('submit', async function(ev){
       ev.preventDefault();
-      const usuario = prompt("Ingresa tu nombre (Johan o Yaretzi)","");
+      const usuario = document.getElementById('usuario').value.trim();
       const titulo = document.getElementById('titulo').value.trim();
       const texto = document.getElementById('texto').value.trim();
-      const fileInput=document.getElementById('foto');
-      const file=fileInput.files[0];
+      const fileInput = document.getElementById('foto');
+      const file = fileInput.files[0];
+
+      let fotoData = '';
       if(file){
-        const reader=new FileReader();
-        reader.onload=async function(evt){
-          await saveRemoteEntry({usuario,titulo,texto,foto:evt.target.result});
-          fetchRemoteEntries();
-          document.getElementById('diarioForm').reset();
-        }
-        reader.readAsDataURL(file);
-      } else {
-        await saveRemoteEntry({usuario,titulo,texto,foto:null});
-        fetchRemoteEntries();
-        document.getElementById('diarioForm').reset();
+        fotoData = await new Promise(resolve=>{
+          const reader = new FileReader();
+          reader.onload = e=> resolve(e.target.result);
+          reader.readAsDataURL(file);
+        });
       }
+
+      const payload = {usuario, titulo, texto, foto: fotoData};
+      try{
+        await fetch(SCRIPT_URL+'?action=add', {
+          method:'POST',
+          body: JSON.stringify(payload),
+          headers: {'Content-Type':'application/json'}
+        });
+        document.getElementById('diarioForm').reset();
+        fetchEntries();
+      }catch(e){ console.error(e); }
     });
 
-    document.getElementById('clearForm').addEventListener('click',()=>document.getElementById('diarioForm').reset());
+    /* ---------- Album (subida múltiple) ---------- */
+    document.getElementById('albumFiles').addEventListener('change', async function(ev){
+      const files = Array.from(ev.target.files || []);
+      for(const f of files){
+        const fotoData = await new Promise(resolve=>{
+          const reader = new FileReader();
+          reader.onload = e=> resolve(e.target.result);
+          reader.readAsDataURL(f);
+        });
+        const payload = {usuario:'', titulo:'Foto', texto:'', foto: fotoData};
+        try{
+          await fetch(SCRIPT_URL+'?action=add', {
+            method:'POST',
+            body: JSON.stringify(payload),
+            headers: {'Content-Type':'application/json'}
+          });
+        }catch(e){ console.error(e); }
+      }
+      ev.target.value='';
+      fetchEntries();
+    });
+
+    document.getElementById('clearAlbum').addEventListener('click', async function(){
+      if(!confirm('Borrar todo el álbum?')) return;
+      try{
+        await fetch(SCRIPT_URL+'?action=clear');
+        fetchEntries();
+      }catch(e){ console.error(e); }
+    });
+
+    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
 
     /* ---------- Inicialización ---------- */
-    document.addEventListener('DOMContentLoaded', ()=>{
+    document.addEventListener('DOMContentLoaded', function(){
       startTimer();
-      fetchRemoteEntries();
+      fetchEntries();
+      setInterval(fetchEntries, 10000); // actualizar cada 10s
     });
   </script>
 </body>
