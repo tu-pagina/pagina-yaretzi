@@ -1,335 +1,265 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Álbum y Diario — Johan & Yaretzi</title>
-  <meta name="description" content="Álbum y diario para Johan y Yaretzi. Añade entradas y fotos desde la página. Cuenta regresiva al 18 de octubre." />
-  <link rel="icon" href="favicon.png" type="image/png">
-
-  <style>
-    :root{
-      --accent:#ff6b81;
-      --accent-2:#ffc6cc;
-      --bg:#fef9f9;
-      --card:#fff;
-      --muted:#666;
-      --radius:12px;
-      --shadow: 0 6px 18px rgba(0,0,0,0.08);
-      --max-width:1100px;
-    }
-    *{box-sizing:border-box}
-    body{
-      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-      margin:0; background:var(--bg); color:#222;
-      -webkit-font-smoothing:antialiased;
-    }
-    .wrap{max-width:var(--max-width); margin:18px auto; padding:18px;}
-
-    header{
-      background:linear-gradient(90deg,var(--accent),#ff8aa0);
-      color:white; padding:20px; border-radius:16px;
-      text-align:center; box-shadow:var(--shadow);
-    }
-    header h1{margin:0; font-size:1.6rem}
-    header p{margin:6px 0 0; opacity:.95}
-
-    nav{display:flex; gap:10px; justify-content:center; margin:12px 0 20px; flex-wrap:wrap;}
-    nav a{
-      background:var(--card); padding:8px 12px; border-radius:999px; text-decoration:none; color:#222;
-      box-shadow:0 4px 10px rgba(0,0,0,0.05); font-weight:600;
-    }
-
-    /* Temporizador */
-    .countbox{max-width:420px; margin:0 auto 18px; padding:14px; background:var(--card); border-radius:var(--radius); text-align:center; box-shadow:var(--shadow);}
-    .countbox .target{font-size:.95rem; color:var(--muted); margin-bottom:6px}
-    .time{
-      display:flex; gap:8px; justify-content:center; flex-wrap:wrap;
-      font-weight:700; color:var(--accent);
-    }
-    .time .unit{background:linear-gradient(180deg,#fff,#faf0f2); padding:10px 14px; border-radius:10px; min-width:84px; box-shadow:0 6px 16px rgba(0,0,0,0.04)}
-    .time .n{font-size:1.2rem; display:block}
-    .time .l{font-size:.8rem; color:var(--muted)}
-
-    main{display:grid; grid-template-columns: 1fr 420px; gap:18px; align-items:start;}
-    @media (max-width: 980px){ main{grid-template-columns:1fr} .countbox{max-width:100%} }
-
-    /* Álbum */
-    .panel{background:var(--card); padding:14px; border-radius:var(--radius); box-shadow:var(--shadow);}
-    .album-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-top:10px}
-    .album-item{position:relative; overflow:hidden; border-radius:10px; cursor:pointer}
-    .album-item img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .25s}
-    .album-item:hover img{transform:scale(1.06)}
-    .album-item .del{position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.5); color:white; border-radius:999px; border:none;padding:6px; cursor:pointer}
-
-    /* Form diario */
-    form .row{display:flex; gap:10px; margin-bottom:10px}
-    form input[type="text"], form textarea{
-      width:100%; padding:10px; border-radius:10px; border:1px solid #eee; resize:vertical;
-    }
-    form input[type="file"]{width:100%}
-    .btn{background:var(--accent); color:white; padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700}
-    .small{background:var(--accent-2); color:#222}
-
-    /* Entradas */
-    .entries{margin-top:12px; display:flex; flex-direction:column; gap:12px}
-    .entry{background:var(--card); padding:12px; border-radius:12px; box-shadow:0 6px 14px rgba(0,0,0,0.03)}
-    .entry .meta{display:flex; gap:8px; align-items:center; justify-content:space-between}
-    .entry img{max-width:220px; border-radius:8px; margin-top:8px; display:block}
-
-    footer{margin-top:22px; text-align:center; color:var(--muted)}
-    /* Lightbox */
-    #lightbox{position:fixed; inset:0; display:none; background:rgba(0,0,0,0.75); justify-content:center; align-items:center; z-index:9999}
-    #lightbox img{max-width:95%; max-height:90%; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.6)}
-
-    /* Corazones/confetti */
-    .hearts {position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:9998}
-    .heart{position:absolute; top:-10vh; font-size:20px; animation:fall linear forwards;}
-    @keyframes fall {
-      to { transform:translateY(120vh) rotate(360deg); opacity:0.1; }
-    }
-
-    .controls-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
-    .muted-txt{color:var(--muted); font-size:.9rem}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Álbum y Diario — Johan & Yaretzi</title>
+<meta name="description" content="Álbum y diario para Johan y Yaretzi. Añade entradas y fotos desde la página. Cuenta regresiva al 18 de octubre." />
+<link rel="icon" href="favicon.png" type="image/png">
+<style>
+:root{
+  --accent:#ff6b81; --accent-2:#ffc6cc; --bg:#fef9f9;
+  --card:#fff; --muted:#666; --radius:12px; --shadow:0 6px 18px rgba(0,0,0,0.08);
+  --max-width:1100px;
+}
+*{box-sizing:border-box}
+body{font-family: 'Segoe UI', Roboto, Arial, sans-serif;margin:0; background:var(--bg); color:#222; -webkit-font-smoothing:antialiased;}
+.wrap{max-width:var(--max-width); margin:18px auto; padding:18px;}
+header{background:linear-gradient(90deg,var(--accent),#ff8aa0); color:white; padding:20px; border-radius:16px;text-align:center; box-shadow:var(--shadow);}
+header h1{margin:0; font-size:1.6rem}
+header p{margin:6px 0 0; opacity:.95}
+nav{display:flex; gap:10px; justify-content:center; margin:12px 0 20px; flex-wrap:wrap;}
+nav a{background:var(--card); padding:8px 12px; border-radius:999px; text-decoration:none; color:#222; box-shadow:0 4px 10px rgba(0,0,0,0.05); font-weight:600;}
+.countbox{max-width:420px; margin:0 auto 18px; padding:14px; background:var(--card); border-radius:var(--radius); text-align:center; box-shadow:var(--shadow);}
+.countbox .target{font-size:.95rem; color:var(--muted); margin-bottom:6px}
+.time{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; font-weight:700; color:var(--accent);}
+.time .unit{background:linear-gradient(180deg,#fff,#faf0f2); padding:10px 14px; border-radius:10px; min-width:84px; box-shadow:0 6px 16px rgba(0,0,0,0.04)}
+.time .n{font-size:1.2rem; display:block}
+.time .l{font-size:.8rem; color:var(--muted)}
+main{display:grid; grid-template-columns: 1fr 420px; gap:18px; align-items:start;}
+@media (max-width: 980px){ main{grid-template-columns:1fr} .countbox{max-width:100%} }
+.panel{background:var(--card); padding:14px; border-radius:var(--radius); box-shadow:var(--shadow);}
+.album-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-top:10px}
+.album-item{position:relative; overflow:hidden; border-radius:10px; cursor:pointer}
+.album-item img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .25s}
+.album-item:hover img{transform:scale(1.06)}
+.album-item .del{position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.5); color:white; border-radius:999px; border:none;padding:6px; cursor:pointer}
+form .row{display:flex; gap:10px; margin-bottom:10px}
+form input[type="text"], form textarea{width:100%; padding:10px; border-radius:10px; border:1px solid #eee; resize:vertical;}
+form input[type="file"]{width:100%}
+.btn{background:var(--accent); color:white; padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700}
+.small{background:var(--accent-2); color:#222}
+.entries{margin-top:12px; display:flex; flex-direction:column; gap:12px}
+.entry{background:var(--card); padding:12px; border-radius:12px; box-shadow:0 6px 14px rgba(0,0,0,0.03)}
+.entry .meta{display:flex; gap:8px; align-items:center; justify-content:space-between}
+.entry img{max-width:220px; border-radius:8px; margin-top:8px; display:block}
+footer{margin-top:22px; text-align:center; color:var(--muted)}
+#lightbox{position:fixed; inset:0; display:none; background:rgba(0,0,0,0.75); justify-content:center; align-items:center; z-index:9999}
+#lightbox img{max-width:95%; max-height:90%; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+.hearts {position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:9998}
+.heart{position:absolute; top:-10vh; font-size:20px; animation:fall linear forwards;}
+@keyframes fall { to { transform:translateY(120vh) rotate(360deg); opacity:0.1; } }
+.controls-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+.muted-txt{color:var(--muted); font-size:.9rem}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>💕 Álbum & Diario — Johan y Yaretzi</h1>
-      <p>Detalle especial — escribe recuerdos y sube fotos desde aquí.</p>
-    </header>
+<div class="wrap">
+<header>
+<h1>💕 Álbum & Diario — Johan y Yaretzi</h1>
+<p>Detalle especial — escribe recuerdos y sube fotos desde aquí.</p>
+</header>
+<nav>
+<a href="#temporizador">Cuenta regresiva</a>
+<a href="#album">Álbum</a>
+<a href="#diario">Diario</a>
+</nav>
+<main>
+<section>
+<div id="album" class="panel">
+<h3>📷 Álbum</h3>
+<p class="muted-txt">Sube fotos directamente al álbum (se sincroniza automáticamente).</p>
+<div class="controls-row">
+<input id="albumFiles" type="file" accept="image/*" multiple>
+</div>
+<div class="album-grid" id="albumGrid" aria-live="polite"></div>
+</div>
+<div id="diario" class="panel" style="margin-top:14px">
+<h3>📖 Nuevo recuerdo</h3>
+<form id="diarioForm">
+<div class="row">
+<input id="titulo" name="titulo" type="text" placeholder="Título (ej. Primer picnic)" required />
+</div>
+<div class="row">
+<textarea id="texto" name="texto" rows="4" placeholder="Escribe el recuerdo..." required></textarea>
+</div>
+<div class="row">
+<input id="foto" name="foto" type="file" accept="image/*">
+</div>
+<div style="display:flex; gap:8px;">
+<button class="btn" type="submit">Guardar entrada</button>
+<button id="clearForm" type="button" class="btn small">Limpiar formulario</button>
+</div>
+</form>
+<h4 style="margin-top:14px">Entradas</h4>
+<div id="entries" class="entries" aria-live="polite"></div>
+</div>
+</section>
+<aside>
+<div class="countbox panel" id="countbox">
+<div class="target">⏳ Nos vemos en:</div>
+<div id="targetDateText" class="muted-txt" style="margin-bottom:10px; text-align:center"></div>
+<div class="time" id="contador">
+<div class="unit"><span class="n" id="d">--</span><span class="l">Días</span></div>
+<div class="unit"><span class="n" id="h">--</span><span class="l">Horas</span></div>
+<div class="unit"><span class="n" id="m">--</span><span class="l">Minutos</span></div>
+<div class="unit"><span class="n" id="s">--</span><span class="l">Segundos</span></div>
+</div>
+</div>
+<div class="panel" style="margin-top:12px">
+<h4>Notas</h4>
+<p class="muted-txt">Todo se guarda en la nube y se sincroniza para ambos. Usa exportar/importar solo si quieres backup local.</p>
+</div>
+</aside>
+</main>
+<footer>
+<p>Con amor — Johan & Yaretzi 🌸</p>
+</footer>
+</div>
+<div id="lightbox" role="dialog" aria-hidden="true"><img id="lightboxImg" src=""></div>
+<div id="hearts" class="hearts" aria-hidden="true"></div>
 
-    <nav>
-      <a href="#temporizador">Cuenta regresiva</a>
-      <a href="#album">Álbum</a>
-      <a href="#diario">Diario</a>
-    </nav>
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEIff6bI_-fpViBpkAo5ptOz-kYl2NNPNeLWCGQ6EAgGVJcIiFUJSR79EJsRAz-Urs/exec";
 
-    <main>
-      <!-- IZQUIERDA: Album + Diario -->
-      <section>
-        <!-- Album -->
-        <div id="album" class="panel">
-          <h3>📷 Álbum</h3>
-          <p class="muted-txt">Sube fotos directamente al álbum (todos pueden ver lo que suben).</p>
-          <div class="controls-row">
-            <input id="albumFiles" type="file" accept="image/*" multiple>
-            <button id="clearAlbum" class="btn small">Limpiar álbum</button>
-          </div>
-          <div class="album-grid" id="albumGrid" aria-live="polite"></div>
-        </div>
-
-        <!-- Diario -->
-        <div id="diario" class="panel" style="margin-top:14px">
-          <h3>📖 Nuevo recuerdo</h3>
-          <form id="diarioForm">
-            <div class="row">
-              <input id="usuario" type="text" placeholder="Tu nombre" required>
-            </div>
-            <div class="row">
-              <input id="titulo" name="titulo" type="text" placeholder="Título (ej. Primer picnic)" required />
-            </div>
-            <div class="row">
-              <textarea id="texto" name="texto" rows="4" placeholder="Escribe el recuerdo..." required></textarea>
-            </div>
-            <div class="row">
-              <input id="foto" name="foto" type="file" accept="image/*">
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button class="btn" type="submit">Guardar entrada</button>
-              <button id="clearForm" type="button" class="btn small">Limpiar formulario</button>
-            </div>
-          </form>
-
-          <h4 style="margin-top:14px">Entradas</h4>
-          <div id="entries" class="entries" aria-live="polite"></div>
-        </div>
-      </section>
-
-      <!-- DERECHA: Temporizador -->
-      <aside>
-        <div class="countbox panel" id="countbox">
-          <div class="target">⏳ Nos vemos en:</div>
-          <div id="targetDateText" class="muted-txt" style="margin-bottom:10px; text-align:center"></div>
-          <div class="time" id="contador">
-            <div class="unit"><span class="n" id="d">--</span><span class="l">Días</span></div>
-            <div class="unit"><span class="n" id="h">--</span><span class="l">Horas</span></div>
-            <div class="unit"><span class="n" id="m">--</span><span class="l">Minutos</span></div>
-            <div class="unit"><span class="n" id="s">--</span><span class="l">Segundos</span></div>
-          </div>
-        </div>
-
-        <div class="panel" style="margin-top:12px">
-          <h4>Notas</h4>
-          <p class="muted-txt">Las entradas y fotos se guardan en Drive y se muestran para ambos.</p>
-        </div>
-      </aside>
-    </main>
-
-    <footer>
-      <p>Con amor — Johan & Yaretzi 🌸</p>
-    </footer>
-  </div>
-
-  <!-- Lightbox -->
-  <div id="lightbox" role="dialog" aria-hidden="true"><img id="lightboxImg" src=""></div>
-  <div id="hearts" class="hearts" aria-hidden="true"></div>
-
-  <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEIff6bI_-fpViBpkAo5ptOz-kYl2NNPNeLWCGQ6EAgGVJcIiFUJSR79EJsRAz-Urs/exec';
-
-    /* ---------- Temporizador ---------- */
-    const targetDate = new Date(2025, 9, 18, 0, 0, 0);
-    let timerInterval = null;
-    function startTimer() {
-      document.getElementById('targetDateText').textContent =
-        targetDate.toLocaleString('es-CO', { dateStyle: 'long', timeStyle: 'short' });
-
-      function update() {
-        const now = new Date();
-        let diff = targetDate.getTime() - now.getTime();
-        if (diff <= 0) {
-          document.getElementById('d').textContent = 0;
-          document.getElementById('h').textContent = 0;
-          document.getElementById('m').textContent = 0;
-          document.getElementById('s').textContent = 0;
-          clearInterval(timerInterval);
-          return;
-        }
-        const dias = Math.floor(diff / (1000*60*60*24));
-        diff -= dias * (1000*60*60*24);
-        const horas = Math.floor(diff / (1000*60*60));
-        diff -= horas * (1000*60*60);
-        const minutos = Math.floor(diff / (1000*60));
-        diff -= minutos * (1000*60);
-        const segundos = Math.floor(diff / 1000);
-
-        document.getElementById('d').textContent = dias;
-        document.getElementById('h').textContent = horas;
-        document.getElementById('m').textContent = minutos;
-        document.getElementById('s').textContent = segundos;
-      }
-      update();
-      timerInterval = setInterval(update, 1000);
+// Temporizador
+const targetDate = new Date(2025, 9, 18, 0, 0, 0);
+let timerInterval = null;
+function startTimer() {
+  document.getElementById('targetDateText').textContent =
+    targetDate.toLocaleString('es-CO', { dateStyle: 'long', timeStyle: 'short' });
+  function update() {
+    const now = new Date();
+    let diff = targetDate.getTime() - now.getTime();
+    if(diff<=0){
+      document.getElementById('d').textContent=0;
+      document.getElementById('h').textContent=0;
+      document.getElementById('m').textContent=0;
+      document.getElementById('s').textContent=0;
+      clearInterval(timerInterval);
+      return;
     }
+    const dias = Math.floor(diff/(1000*60*60*24));
+    diff -= dias*(1000*60*60*24);
+    const horas = Math.floor(diff/(1000*60*60));
+    diff -= horas*(1000*60*60);
+    const minutos = Math.floor(diff/(1000*60));
+    diff -= minutos*(1000*60);
+    const segundos = Math.floor(diff/1000);
+    document.getElementById('d').textContent=dias;
+    document.getElementById('h').textContent=horas;
+    document.getElementById('m').textContent=minutos;
+    document.getElementById('s').textContent=segundos;
+  }
+  update();
+  timerInterval = setInterval(update,1000);
+}
 
-    /* ---------- Lightbox ---------- */
-    function openLightbox(src){
-      document.getElementById('lightboxImg').src = src;
-      const lb = document.getElementById('lightbox');
-      lb.style.display = 'flex';
-      lb.setAttribute('aria-hidden','false');
+// Utilidades
+function escapeHtml(s){ if(!s)return''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+function openLightbox(src){document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').style.display='flex'; document.getElementById('lightbox').setAttribute('aria-hidden','false');}
+document.getElementById('lightbox').addEventListener('click', function(){ this.style.display='none'; this.setAttribute('aria-hidden','true'); });
+
+// Cargar entradas y álbum desde Apps Script
+async function fetchData(){
+  try{
+    const resp = await fetch(SCRIPT_URL);
+    const data = await resp.json();
+    renderEntries(data.entries || []);
+    renderAlbum(data.album || []);
+  }catch(e){console.error(e);}
+}
+
+// Render entradas
+function renderEntries(list){
+  const container = document.getElementById('entries');
+  container.innerHTML='';
+  if(!list.length){container.innerHTML='<p class="muted-txt">Aún no hay entradas — añade una desde el formulario.</p>'; return;}
+  list.slice().reverse().forEach(entry=>{
+    const div=document.createElement('div');
+    div.className='entry';
+    const date=new Date(entry.fecha);
+    const dateStr=date.toLocaleString('es-CO',{ dateStyle:'medium', timeStyle:'short' });
+    div.innerHTML=`
+      <div class="meta">
+        <div><strong>${escapeHtml(entry.titulo)}</strong><div class="muted-txt">${dateStr}</div></div>
+      </div>
+      <div style="margin-top:8px">${escapeHtml(entry.texto)}</div>
+    `;
+    if(entry.foto){
+      const img=document.createElement('img');
+      img.src=entry.foto; img.alt=entry.titulo || 'foto';
+      img.style.cursor='zoom-in'; img.addEventListener('click',()=>openLightbox(entry.foto));
+      div.appendChild(img);
     }
-    document.getElementById('lightbox').addEventListener('click', function(){ this.style.display='none'; this.setAttribute('aria-hidden','true'); });
+    container.appendChild(div);
+  });
+}
 
-    /* ---------- Fetch / mostrar entradas ---------- */
-    async function fetchEntries(){
-      try {
-        const resp = await fetch(SCRIPT_URL);
-        const data = await resp.json();
-        renderEntries(data.entries || []);
-      } catch(e){ console.error(e); }
-    }
+// Render álbum
+function renderAlbum(list){
+  const grid=document.getElementById('albumGrid'); grid.innerHTML='';
+  if(!list.length){grid.innerHTML='<div class="muted-txt">No hay fotos en el álbum.</div>'; return;}
+  list.slice().reverse().forEach(item=>{
+    const node=document.createElement('div'); node.className='album-item';
+    const img=document.createElement('img'); img.src=item.src; img.alt='foto álbum';
+    img.addEventListener('click',()=>openLightbox(item.src));
+    node.appendChild(img); grid.appendChild(node);
+  });
+}
 
-    function renderEntries(list){
-      const container = document.getElementById('entries');
-      container.innerHTML = '';
-      if (!list.length){
-        container.innerHTML = '<p class="muted-txt">Aún no hay entradas.</p>';
-        return;
-      }
-      list.slice().reverse().forEach(entry => {
-        const div = document.createElement('div');
-        div.className = 'entry';
-        const date = new Date(entry.fecha);
-        const dateStr = date.toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' });
-        div.innerHTML = `
-          <div class="meta">
-            <div><strong>${escapeHtml(entry.usuario)}: ${escapeHtml(entry.titulo)}</strong><div class="muted-txt">${dateStr}</div></div>
-          </div>
-          <div style="margin-top:8px">${escapeHtml(entry.texto)}</div>
-        `;
-        if (entry.foto) {
-          const img = document.createElement('img');
-          img.src = entry.foto;
-          img.alt = entry.titulo || 'foto';
-          img.style.cursor = 'zoom-in';
-          img.addEventListener('click', ()=> openLightbox(entry.foto));
-          div.appendChild(img);
-        }
-        container.appendChild(div);
-      });
-    }
-
-    /* ---------- Subir nueva entrada ---------- */
-    document.getElementById('diarioForm').addEventListener('submit', async function(ev){
-      ev.preventDefault();
-      const usuario = document.getElementById('usuario').value.trim();
-      const titulo = document.getElementById('titulo').value.trim();
-      const texto = document.getElementById('texto').value.trim();
-      const fileInput = document.getElementById('foto');
-      const file = fileInput.files[0];
-
-      let fotoData = '';
-      if(file){
-        fotoData = await new Promise(resolve=>{
-          const reader = new FileReader();
-          reader.onload = e=> resolve(e.target.result);
-          reader.readAsDataURL(file);
-        });
-      }
-
-      const payload = {usuario, titulo, texto, foto: fotoData};
-      try{
-        await fetch(SCRIPT_URL+'?action=add', {
-          method:'POST',
-          body: JSON.stringify(payload),
-          headers: {'Content-Type':'application/json'}
-        });
-        document.getElementById('diarioForm').reset();
-        fetchEntries();
-      }catch(e){ console.error(e); }
+// Guardar nueva entrada
+document.getElementById('diarioForm').addEventListener('submit', async function(ev){
+  ev.preventDefault();
+  const titulo=document.getElementById('titulo').value.trim();
+  const texto=document.getElementById('texto').value.trim();
+  const fileInput=document.getElementById('foto'); const file=fileInput.files[0];
+  let foto=null;
+  if(file){
+    foto=await new Promise((res,rej)=>{
+      const reader=new FileReader();
+      reader.onload=e=>res(e.target.result);
+      reader.onerror=rej;
+      reader.readAsDataURL(file);
     });
+  }
+  await fetch(SCRIPT_URL, {
+    method:'POST',
+    body: JSON.stringify({ titulo,texto,foto }),
+    headers:{'Content-Type':'application/json'}
+  });
+  document.getElementById('diarioForm').reset();
+  fetchData();
+});
+document.getElementById('clearForm').addEventListener('click',()=>document.getElementById('diarioForm').reset());
 
-    /* ---------- Album (subida múltiple) ---------- */
-    document.getElementById('albumFiles').addEventListener('change', async function(ev){
-      const files = Array.from(ev.target.files || []);
-      for(const f of files){
-        const fotoData = await new Promise(resolve=>{
-          const reader = new FileReader();
-          reader.onload = e=> resolve(e.target.result);
-          reader.readAsDataURL(f);
-        });
-        const payload = {usuario:'', titulo:'Foto', texto:'', foto: fotoData};
-        try{
-          await fetch(SCRIPT_URL+'?action=add', {
-            method:'POST',
-            body: JSON.stringify(payload),
-            headers: {'Content-Type':'application/json'}
-          });
-        }catch(e){ console.error(e); }
-      }
-      ev.target.value='';
-      fetchEntries();
+// Subir fotos al álbum
+document.getElementById('albumFiles').addEventListener('change', async function(ev){
+  const files=Array.from(ev.target.files || []);
+  for(const f of files){
+    const foto=await new Promise((res,rej)=>{
+      const reader=new FileReader();
+      reader.onload=e=>res(e.target.result);
+      reader.onerror=rej;
+      reader.readAsDataURL(f);
     });
-
-    document.getElementById('clearAlbum').addEventListener('click', async function(){
-      if(!confirm('Borrar todo el álbum?')) return;
-      try{
-        await fetch(SCRIPT_URL+'?action=clear');
-        fetchEntries();
-      }catch(e){ console.error(e); }
+    await fetch(SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify({ titulo:'', texto:'', foto }),
+      headers:{'Content-Type':'application/json'}
     });
+  }
+  document.getElementById('albumFiles').value='';
+  fetchData();
+});
 
-    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+// Actualizar cada 5 segundos para ver cambios en tiempo real
+setInterval(fetchData,5000);
 
-    /* ---------- Inicialización ---------- */
-    document.addEventListener('DOMContentLoaded', function(){
-      startTimer();
-      fetchEntries();
-      setInterval(fetchEntries, 10000); // actualizar cada 10s
-    });
-  </script>
+document.addEventListener('DOMContentLoaded', function(){
+  startTimer();
+  fetchData();
+});
+</script>
 </body>
 </html>
