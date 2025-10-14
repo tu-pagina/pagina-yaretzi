@@ -237,7 +237,7 @@
       for (let i=0;i<count;i++){
         const span = document.createElement('span');
         span.className = 'heart';
-        span.textContent = ['💖','💘','❤'][Math.floor(Math.random()*3)];
+        span.textContent = ['💖','💘','❤️'][Math.floor(Math.random()*3)];
         const left = Math.random()*100;
         span.style.left = left + 'vw';
         const delay = Math.random()*1;
@@ -438,7 +438,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = backup_album_diario_${new Date().toISOString().slice(0,10)}.json;
+      a.download = `backup_album_diario_${new Date().toISOString().slice(0,10)}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -485,3 +485,4 @@
   </script>
 </body>
 </html>
+
